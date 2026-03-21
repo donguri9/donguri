@@ -1,4 +1,4 @@
-<!doctype html>
+<!-- <!doctype html>
 <html lang="ja">
 <head>
 	<meta charset="UTF-8" />
@@ -68,5 +68,132 @@ var test = document.getElementById("test");
 	
 	
 	
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>プリセット・キッチンタイマー修正版</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f4f8; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .setup-area { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 25px; width: 100%; max-width: 600px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        select, input { padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; flex: 1; }
+        input[type="number"] { max-width: 80px; }
+        .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .preset-btn { background: #e9ecef; border: none; padding: 8px 12px; border-radius: 20px; cursor: pointer; }
+        .add-btn { width: 100%; background: #007bff; color: white; font-weight: bold; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
+        .timer-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; width: 100%; max-width: 900px; }
+        .timer-card { background: white; padding: 15px; border-radius: 12px; border-left: 6px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .time-display { font-size: 2rem; font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>🍳 クイック・キッチンタイマー</h1>
+
+    <div class="setup-area">
+        <div class="input-group">
+            <select id="dishSelect" onchange="applyPreset()">
+                <option value="">料理を選ぶ</option>
+                <option value="カップ麺" data-time="3">カップ麺 (3分)</option>
+                <option value="ゆで卵" data-time="5">ゆで卵 (5分)</option>
+                <option value="パスタ" data-time="8">パスタ (8分)</option>
+                <option value="煮物" data-time="15">煮物 (15分)</option>
+            </select>
+            <input type="text" id="labelInput" placeholder="料理名">
+            <input type="number" id="minInput" placeholder="分">
+        </div>
+
+        <div class="presets">
+            <button class="preset-btn" onclick="quickAdd('カップ麺', 3)">3分</button>
+            <button class="preset-btn" onclick="quickAdd('ゆで卵', 5)">5分</button>
+            <button class="preset-btn" onclick="quickAdd('パスタ', 8)">8分</button>
+        </div>
+
+        <button class="add-btn" onclick="addTimer()">タイマーを開始</button>
+    </div>
+
+    <div id="timerList" class="timer-list"></div>
+
+<script>
+    let timers = [];
+
+    // 修正ポイント：セレクトボックスの選択状態から値を取得して反映
+    function applyPreset() {
+        const select = document.getElementById('dishSelect');
+        const labelInput = document.getElementById('labelInput');
+        const minInput = document.getElementById('minInput');
+        
+        // 選択されたoption要素を取得
+        const selectedOption = select.options[select.selectedIndex];
+        
+        if (selectedOption.value !== "") {
+            labelInput.value = selectedOption.value;
+            // data-time属性から分数を取得
+            minInput.value = selectedOption.getAttribute('data-time');
+        }
+    }
+
+    function quickAdd(label, min) {
+        document.getElementById('labelInput').value = label;
+        document.getElementById('minInput').value = min;
+        addTimer();
+    }
+
+    function addTimer() {
+        const label = document.getElementById('labelInput').value || 'タイマー';
+        const minutes = parseInt(document.getElementById('minInput').value) || 0;
+        if (minutes <= 0) {
+            alert("分数を入力してください");
+            return;
+        }
+
+        const timerObj = {
+            id: Date.now(),
+            label: label,
+            endTime: Date.now() + (minutes * 60 * 1000),
+            finished: false
+        };
+
+        timers.push(timerObj);
+        render();
+    }
+
+    function deleteTimer(id) {
+        timers = timers.filter(t => t.id !== id);
+        render();
+    }
+
+    function render() {
+        const listElement = document.getElementById('timerList');
+        listElement.innerHTML = '';
+        const now = Date.now();
+
+        timers.forEach(t => {
+            const diff = Math.max(0, t.endTime - now);
+            const m = Math.floor(diff / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+
+            if (diff <= 0) t.finished = true;
+
+            const card = document.createElement('div');
+            card.className = `timer-card`;
+            if(t.finished) card.style.backgroundColor = "#ffecec";
+            
+            card.innerHTML = `
+                <div style="font-weight:bold">${t.label}</div>
+                <div class="time-display">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</div>
+                <button onclick="deleteTimer(${t.id})">${t.finished ? '終了' : '削除'}</button>
+            `;
+            listElement.appendChild(card);
+        });
+    }
+
+    setInterval(render, 1000);
+</script>
+
 </body>
 </html>
